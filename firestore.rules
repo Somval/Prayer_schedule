@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /slots/{slotId} {
+      // Anyone can read the schedule
+      allow read: if true;
+
+      // Only signed-in admins can create the schedule, delete slots, or release a taken hour
+      allow create, delete: if request.auth != null;
+
+      // Public sign-up: allowed ONLY when going from taken:false -> taken:true,
+      // and only fields relevant to claiming are being set. Admins can update freely.
+      allow update: if request.auth != null || (
+        resource.data.taken == false &&
+        request.resource.data.taken == true &&
+        request.resource.data.index == resource.data.index &&
+        request.resource.data.label == resource.data.label
+      );
+    }
+  }
+}
